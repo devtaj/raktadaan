@@ -39,7 +39,7 @@ class ProfileScreen extends StatelessWidget {
               }
 
               if (snapshot.hasError) {
-                return Text('Error: ${snapshot.error}');
+                return Text('User not found');
               }
 
               if (!snapshot.hasData || !snapshot.data!.exists) {
