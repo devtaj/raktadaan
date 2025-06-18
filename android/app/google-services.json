@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "129174984799",
+    "project_id": "raktadan-69da2",
+    "storage_bucket": "raktadan-69da2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:129174984799:android:f7cd6cafd320df028323ea",
+        "android_client_info": {
+          "package_name": "com.example.raktadan"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDzQ5mNqMJH4UEI-Bo6qcVxjy8tiObCGRs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
