@@ -208,7 +208,7 @@ class _MainScreenState extends State<MainScreen> {
                         onTap: _onBloodBankTap),
                     buildCard(
                         icon: Icons.volunteer_activism,
-                        label: "Donate Now",
+                        label: "Be a Donor",
                         onTap: _onDonateNowTap),
                     buildCard(
                         icon: Icons.contact_emergency_rounded,
@@ -226,7 +226,7 @@ class _MainScreenState extends State<MainScreen> {
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 child: Text(
-                  "Latest News & Updates",
+                  "Latest Events & Updates",
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
               ),

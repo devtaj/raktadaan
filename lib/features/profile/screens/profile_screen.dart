@@ -17,14 +17,30 @@ class ProfileScreen extends StatelessWidget {
         .get();
   }
 
-  void _logout(BuildContext context) async {
-    await AuthService().logout();
-    Navigator.pushReplacementNamed(context, '/login');
-  }
+  // void _logout(BuildContext context) async {
+  //   await AuthService().logout();
+  //   Navigator.pushReplacementNamed(context, '/login');
+  // }
 
   @override
   Widget build(BuildContext context) {
-    final userEmail = AuthService().currentUser?.email ?? 'N/A';
+    final user = AuthService().currentUser;
+
+    // If user is not logged in → push to login screen
+    if (user == null) {
+      // Use Future.microtask to push after the first frame
+      Future.microtask(() {
+        Navigator.pushReplacementNamed(context, '/login');
+      });
+
+      // Meanwhile show empty screen or loading
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // If user is logged in → show profile
+    final userEmail = user.email ?? 'N/A';
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
@@ -39,7 +55,7 @@ class ProfileScreen extends StatelessWidget {
               }
 
               if (snapshot.hasError) {
-                return Text('User not found');
+                return const Text('Something went wrong. Please try again.');
               }
 
               if (!snapshot.hasData || !snapshot.data!.exists) {
@@ -71,12 +87,7 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(height: 10),
                   Text('Location: $location', style: const TextStyle(fontSize: 16)),
                   const SizedBox(height: 40),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.logout),
-                    label: const Text('Logout'),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                    onPressed: () => _logout(context),
-                  ),
+                  
                 ],
               );
             },

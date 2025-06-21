@@ -37,6 +37,7 @@ class RaktadanApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Raktadan',
       theme: AppTheme.lightTheme,
       initialRoute: AppRoutes.initial,
