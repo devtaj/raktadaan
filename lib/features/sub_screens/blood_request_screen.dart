@@ -16,7 +16,10 @@ class _BloodRequestScreenState extends State<BloodRequestScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _hospitalController = TextEditingController();
-  String? _selectedBloodGroup; // no default selected now
+  final TextEditingController _qtyController = TextEditingController();
+  final TextEditingController _caseController = TextEditingController();
+
+  String? _selectedBloodGroup;
 
   final List<String> _bloodGroups = [
     'A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'
@@ -25,13 +28,24 @@ class _BloodRequestScreenState extends State<BloodRequestScreen> {
   Future<void> _submitRequest() async {
     if (_formKey.currentState!.validate()) {
       try {
+        final user = AuthService().currentUser;
+        if (user == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('You must be logged in to submit a request.')),
+          );
+          return;
+        }
+
         await FirebaseFirestore.instance.collection('bloodrequest').add({
           'name': _nameController.text,
           'phone': _phoneController.text,
           'location': _locationController.text,
           'hospital': _hospitalController.text,
+          'qty': _qtyController.text,
+          'case': _caseController.text,
           'bloodGroup': _selectedBloodGroup,
           'timestamp': FieldValue.serverTimestamp(),
+          'postedByUserId': user.uid, // ✅ This is required
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -44,6 +58,8 @@ class _BloodRequestScreenState extends State<BloodRequestScreen> {
         _phoneController.clear();
         _locationController.clear();
         _hospitalController.clear();
+        _qtyController.clear();
+        _caseController.clear();
         setState(() {
           _selectedBloodGroup = null;
         });
@@ -57,11 +73,12 @@ class _BloodRequestScreenState extends State<BloodRequestScreen> {
 
   @override
   void dispose() {
-    // Dispose controllers when screen is removed
     _nameController.dispose();
     _phoneController.dispose();
     _locationController.dispose();
     _hospitalController.dispose();
+    _qtyController.dispose();
+    _caseController.dispose();
     super.dispose();
   }
 
@@ -70,7 +87,6 @@ class _BloodRequestScreenState extends State<BloodRequestScreen> {
     final user = AuthService().currentUser;
 
     if (user == null) {
-      // User not logged in → show AlertDialog
       Future.microtask(() {
         showDialog(
           context: context,
@@ -80,7 +96,7 @@ class _BloodRequestScreenState extends State<BloodRequestScreen> {
             actions: [
               TextButton(
                 onPressed: () {
-                  Navigator.pop(ctx); // close dialog
+                  Navigator.pop(ctx);
                   Navigator.pushReplacementNamed(context, '/login');
                 },
                 child: const Text('Go to Login'),
@@ -90,13 +106,11 @@ class _BloodRequestScreenState extends State<BloodRequestScreen> {
         );
       });
 
-      // Show empty screen with loading while dialog is displayed
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    // If user is logged in → show request form
     return Scaffold(
       appBar: AppBar(title: const Text('Request Blood')),
       body: SingleChildScrollView(
@@ -109,42 +123,55 @@ class _BloodRequestScreenState extends State<BloodRequestScreen> {
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(labelText: 'Patient Name'),
-                validator: (value) => value == null || value.isEmpty
-                    ? 'Please enter your name'
-                    : null,
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Please enter your name' : null,
               ),
               const SizedBox(height: 10),
               TextFormField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(labelText: 'Phone Number'),
-                validator: (value) => value == null || value.isEmpty
-                    ? 'Please enter your phone number'
-                    : null,
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Please enter your phone number' : null,
               ),
               const SizedBox(height: 10),
               TextFormField(
                 controller: _locationController,
                 decoration: const InputDecoration(labelText: 'Location'),
-                validator: (value) => value == null || value.isEmpty
-                    ? 'Please enter location'
-                    : null,
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Please enter location' : null,
               ),
               const SizedBox(height: 10),
               TextFormField(
                 controller: _hospitalController,
                 decoration: const InputDecoration(labelText: 'Hospital Name'),
-                validator: (value) => value == null || value.isEmpty
-                    ? 'Please enter hospital name'
-                    : null,
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Please enter hospital name' : null,
+              ),
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: _qtyController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Required Qty (units)'),
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Please enter required quantity' : null,
+              ),
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: _caseController,
+                decoration: const InputDecoration(labelText: 'Case / Reason'),
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Please enter case or reason' : null,
               ),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
                 value: _selectedBloodGroup,
                 decoration: const InputDecoration(labelText: 'Blood Group'),
                 items: _bloodGroups
-                    .map((group) =>
-                        DropdownMenuItem(value: group, child: Text(group)))
+                    .map((group) => DropdownMenuItem(
+                          value: group,
+                          child: Text(group),
+                        ))
                     .toList(),
                 validator: (value) =>
                     value == null ? 'Please select blood group' : null,

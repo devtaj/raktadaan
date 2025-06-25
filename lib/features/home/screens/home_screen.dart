@@ -1,4 +1,5 @@
 // features/home/screens/home_screen.dart
+import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:raktadan/core/services/auth_service.dart';
 import 'package:raktadan/features/sub_screens/blood_request_list.dart';
@@ -28,11 +29,11 @@ class _HomeScreenState extends State<HomeScreen> {
     const DonorListScreen(),
   ];
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
+  // void _onItemTapped(int index) {
+  //   setState(() {
+  //     _selectedIndex = index;
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -79,25 +80,23 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        selectedItemColor: Colors.red,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bloodtype),
-            label: 'Blood Request',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: 'Donnor List',
-          ),
-        ],
-      ),
+      bottomNavigationBar: ConvexAppBar(
+  backgroundColor: Colors.red,
+  activeColor: Colors.white,
+  color: Colors.white,
+  initialActiveIndex: _selectedIndex,
+  onTap: (int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  },
+  items: const [
+    TabItem(icon: Icons.home, title: 'Home'),
+    TabItem(icon: Icons.bloodtype, title: 'Blood Request'),
+    TabItem(icon: Icons.favorite, title: 'Donor List'),
+  ],
+),
+
     );
   }
 }
