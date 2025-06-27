@@ -17,6 +17,10 @@ class ProfileScreen extends StatelessWidget {
         .get();
   }
 
+  Future<void> _deleteRequest(String docId) async {
+    await FirebaseFirestore.instance.collection('bloodrequest').doc(docId).delete();
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = AuthService().currentUser;
@@ -39,6 +43,7 @@ class ProfileScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            // Fetch and display user data
             FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
               future: _getUserData(),
               builder: (context, snapshot) {
@@ -87,64 +92,87 @@ class ProfileScreen extends StatelessWidget {
               },
             ),
 
-            /// List of submitted blood requests by this user
+            // Display submitted blood requests by this user
             StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-  stream: user.uid.isNotEmpty
-      ? FirebaseFirestore.instance
-          .collection('bloodrequest')
-          .where('postedByUserId', isEqualTo: user.uid)
-          .orderBy('timestamp', descending: true)
-          .snapshots()
-      : const Stream.empty(),
-  builder: (context, snapshot) {
-    if (snapshot.connectionState == ConnectionState.waiting) {
-      return const Padding(
-        padding: EdgeInsets.only(top: 20),
-        child: CircularProgressIndicator(),
-      );
-    }
+              stream: FirebaseFirestore.instance
+                  .collection('bloodrequest')
+                  .where('postedByUserId', isEqualTo: user.uid)
+                  .orderBy('timestamp', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Padding(
+                    padding: EdgeInsets.only(top: 20),
+                    child: CircularProgressIndicator(),
+                  );
+                }
 
-    if (snapshot.hasError) {
-      print('Firestore error: ${snapshot.error}');
-      return const Text('Failed to load blood requests.');
-    }
+                if (snapshot.hasError) {
+                  return const Text('Failed to load blood requests.');
+                }
 
-    final docs = snapshot.data?.docs ?? [];
+                final docs = snapshot.data?.docs ?? [];
 
-    if (docs.isEmpty) {
-      return const Text('You haven\'t submitted any blood requests yet.');
-    }
+                if (docs.isEmpty) {
+                  return const Text('You haven\'t submitted any blood requests yet.');
+                }
 
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: docs.length,
-      itemBuilder: (context, index) {
-        final data = docs[index].data();
-        final bloodGroup = data['bloodGroup'] ?? 'N/A';
-        final hospital = data['hospital'] ?? 'N/A';
-        final location = data['location'] ?? 'N/A';
-        final qty = data['qty'] ?? 'N/A';
-        final caseDetail = data['case'] ?? 'N/A';
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: docs.length,
+                  itemBuilder: (context, index) {
+                    final doc = docs[index];
+                    final data = doc.data();
+                    final bloodGroup = data['bloodGroup'] ?? 'N/A';
+                    final hospital = data['hospital'] ?? 'N/A';
+                    final location = data['location'] ?? 'N/A';
+                    final qty = data['qty']?.toString() ?? 'N/A';
+                    final caseDetail = data['case'] ?? 'N/A';
 
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 6),
-          child: ListTile(
-            leading: const Icon(Icons.bloodtype, color: Colors.red),
-            title: Text('Blood Group: $bloodGroup'),
-            subtitle: Text(
-              'Hospital: $hospital\n'
-              'Location: $location\n'
-              'Qty: $qty units\n'
-              'Case: $caseDetail',
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 6),
+                      child: ListTile(
+                        leading: const Icon(Icons.bloodtype, color: Colors.red),
+                        title: Text('Blood Group: $bloodGroup'),
+                        subtitle: Text(
+                          'Hospital: $hospital\n'
+                          'Location: $location\n'
+                          'Qty: $qty units\n'
+                          'Case: $caseDetail',
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text('Delete Request'),
+                                content: const Text('Are you sure you want to delete this blood request?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx, false),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx, true),
+                                    child: const Text('Delete'),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (confirm == true) {
+                              await _deleteRequest(doc.id);
+                            }
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
             ),
-          ),
-        );
-      },
-    );
-  },
-),
-
           ],
         ),
       ),

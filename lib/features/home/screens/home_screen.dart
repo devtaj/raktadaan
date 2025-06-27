@@ -60,9 +60,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   PopupMenuItem(
                     child: TextButton(
                       onPressed: () {
-                        Navigator.pushNamed(context, '/notifications');
+                        Navigator.pushNamed(context, '/settings');
                       },
-                      child: const Text('Notification'),
+                      child: const Text('Setting'),
                     ),
                   ),
                   PopupMenuItem(

@@ -6,7 +6,7 @@ import 'package:raktadan/features/sub_screens/blood_request_screen.dart';
 import 'package:raktadan/features/sub_screens/event_screen.dart';
 import 'package:raktadan/features/sub_screens/blood_banks.dart';
 import 'package:raktadan/features/sub_screens/emergency_number_list.dart';
-import 'package:raktadan/features/sub_screens/notification_screen.dart';
+import 'package:raktadan/features/sub_screens/setting_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart'; 
 import '../../features/home/screens/home_screen.dart';
@@ -24,7 +24,7 @@ class AppRoutes {
     '/addBloodDonationEvent': (_) => const AddBloodDonationEventScreen(),
     '/profile':(_)=> const ProfileScreen(),
     '/bloodRequest': (_) => const BloodRequestScreen(),
-    '/notifications': (_) => const NotificationScreen(),
+    '/settings': (_) => const SettingScreen(),
 
     
     
