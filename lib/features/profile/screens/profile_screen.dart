@@ -18,7 +18,64 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Future<void> _deleteRequest(String docId) async {
-    await FirebaseFirestore.instance.collection('bloodrequest').doc(docId).delete();
+    await FirebaseFirestore.instance
+        .collection('bloodrequest')
+        .doc(docId)
+        .delete();
+
+    // also delete progress tracking if exists
+    await FirebaseFirestore.instance
+        .collection('donation_progress')
+        .doc(docId)
+        .delete();
+  }
+
+  Future<void> _updateStatus(String docId, String newStatus) async {
+    // Update donation_progress safely
+    await FirebaseFirestore.instance
+        .collection('donation_progress')
+        .doc(docId)
+        .set({
+          'status': newStatus,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+
+    // Update bloodrequest safely
+    await FirebaseFirestore.instance.collection('bloodrequest').doc(docId).set({
+      'status': newStatus,
+    }, SetOptions(merge: true));
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'fulfilled':
+        return Colors.green;
+      case 'donating':
+        return Colors.orange;
+      case 'on_the_way':
+        return Colors.blue;
+      case 'cancelled':
+        return Colors.grey;
+      default:
+        return Colors.red; // pending
+    }
+  }
+
+  String _formatStatus(String status) {
+    switch (status) {
+      case 'pending':
+        return "Pending";
+      case 'on_the_way':
+        return "On the Way";
+      case 'donating':
+        return "Donating";
+      case 'fulfilled':
+        return "Fulfilled";
+      case 'cancelled':
+        return "Cancelled";
+      default:
+        return "Unknown";
+    }
   }
 
   @override
@@ -30,9 +87,7 @@ class ProfileScreen extends StatelessWidget {
         Navigator.pushReplacementNamed(context, '/login');
       });
 
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final userEmail = user.email ?? 'N/A';
@@ -43,7 +98,7 @@ class ProfileScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Fetch and display user data
+            // Profile Info
             FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
               future: _getUserData(),
               builder: (context, snapshot) {
@@ -70,21 +125,39 @@ class ProfileScreen extends StatelessWidget {
                   children: [
                     const Icon(Icons.person, size: 80, color: Colors.red),
                     const SizedBox(height: 20),
-                    Text(name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 10),
-                    Text('Email: $userEmail', style: const TextStyle(fontSize: 16)),
+                    Text(
+                      'Email: $userEmail',
+                      style: const TextStyle(fontSize: 16),
+                    ),
                     const SizedBox(height: 10),
                     Text('Phone: $phone', style: const TextStyle(fontSize: 16)),
                     const SizedBox(height: 10),
-                    Text('Blood Group: $bloodGroup', style: const TextStyle(fontSize: 16)),
+                    Text(
+                      'Blood Group: $bloodGroup',
+                      style: const TextStyle(fontSize: 16),
+                    ),
                     const SizedBox(height: 10),
-                    Text('Location: $location', style: const TextStyle(fontSize: 16)),
+                    Text(
+                      'Location: $location',
+                      style: const TextStyle(fontSize: 16),
+                    ),
                     const SizedBox(height: 30),
                     const Divider(thickness: 2),
                     const SizedBox(height: 10),
                     const Text(
                       'Your Blood Requests',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 10),
                   ],
@@ -92,7 +165,7 @@ class ProfileScreen extends StatelessWidget {
               },
             ),
 
-            // Display submitted blood requests by this user
+            // User's Blood Requests
             StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
               stream: FirebaseFirestore.instance
                   .collection('bloodrequest')
@@ -114,7 +187,9 @@ class ProfileScreen extends StatelessWidget {
                 final docs = snapshot.data?.docs ?? [];
 
                 if (docs.isEmpty) {
-                  return const Text('You haven\'t submitted any blood requests yet.');
+                  return const Text(
+                    'You haven\'t submitted any blood requests yet.',
+                  );
                 }
 
                 return ListView.builder(
@@ -129,43 +204,117 @@ class ProfileScreen extends StatelessWidget {
                     final location = data['location'] ?? 'N/A';
                     final qty = data['qty']?.toString() ?? 'N/A';
                     final caseDetail = data['case'] ?? 'N/A';
+                    final status = data['status'] ?? 'pending';
+                    final timestamp = data['timestamp'] is Timestamp
+                        ? (data['timestamp'] as Timestamp).toDate()
+                        : null;
 
                     return Card(
                       margin: const EdgeInsets.symmetric(vertical: 6),
                       child: ListTile(
                         leading: const Icon(Icons.bloodtype, color: Colors.red),
                         title: Text('Blood Group: $bloodGroup'),
-                        subtitle: Text(
-                          'Hospital: $hospital\n'
-                          'Location: $location\n'
-                          'Qty: $qty units\n'
-                          'Case: $caseDetail',
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Hospital: $hospital'),
+                            Text('Location: $location'),
+                            Text('Qty: $qty units'),
+                            Text('Case: $caseDetail'),
+                            if (timestamp != null)
+                              Text('Posted: ${timestamp.toLocal()}'),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Text("Status: "),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _getStatusColor(status),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    _formatStatus(status),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () async {
-                            final confirm = await showDialog<bool>(
-                              context: context,
-                              builder: (ctx) => AlertDialog(
-                                title: const Text('Delete Request'),
-                                content: const Text('Are you sure you want to delete this blood request?'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(ctx, false),
-                                    child: const Text('Cancel'),
+                        isThreeLine: true,
+                        trailing: PopupMenuButton<String>(
+                          onSelected: (value) async {
+                            if (value == 'delete') {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Delete Request'),
+                                  content: const Text(
+                                    'Are you sure you want to delete this blood request?',
                                   ),
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(ctx, true),
-                                    child: const Text('Delete'),
-                                  ),
-                                ],
-                              ),
-                            );
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(ctx, false),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx, true),
+                                      child: const Text('Delete'),
+                                    ),
+                                  ],
+                                ),
+                              );
 
-                            if (confirm == true) {
-                              await _deleteRequest(doc.id);
+                              if (confirm == true) {
+                                await _deleteRequest(doc.id);
+                              }
+                            } else {
+                              // Update status
+                              await _updateStatus(doc.id, value);
                             }
                           },
+
+                          itemBuilder: (ctx) => [
+                            const PopupMenuItem(
+                              value: 'pending',
+                              child: Text('Mark as Pending'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'on_the_way',
+                              child: Text('Mark as On The Way'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'donating',
+                              child: Text('Mark as Donating'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'fulfilled',
+                              child: Text('Mark as Fulfilled'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'cancelled',
+                              child: Text(
+                                'Mark as Cancelled',
+                                style: TextStyle(color: Colors.blue),
+                              ),
+                            ),
+                            const PopupMenuDivider(),
+                            const PopupMenuItem(
+                              value: 'delete',
+                              child: Text(
+                                'Delete Request',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     );

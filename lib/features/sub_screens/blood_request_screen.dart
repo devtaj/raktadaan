@@ -20,9 +20,17 @@ class _BloodRequestScreenState extends State<BloodRequestScreen> {
   final TextEditingController _caseController = TextEditingController();
 
   String? _selectedBloodGroup;
+  String? _selectedStatus;
 
   final List<String> _bloodGroups = [
     'A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'
+  ];
+
+  final List<String> _statuses = [
+    'pending',
+    'on the way',
+    'donating',
+    'fulfilled',
   ];
 
   Future<void> _submitRequest() async {
@@ -45,7 +53,8 @@ class _BloodRequestScreenState extends State<BloodRequestScreen> {
           'case': _caseController.text,
           'bloodGroup': _selectedBloodGroup,
           'timestamp': FieldValue.serverTimestamp(),
-          'postedByUserId': user.uid, // ✅ This is required
+          'postedByUserId': user.uid,
+          'status': _selectedStatus ?? 'pending', // ✅ save status
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -62,6 +71,7 @@ class _BloodRequestScreenState extends State<BloodRequestScreen> {
         _caseController.clear();
         setState(() {
           _selectedBloodGroup = null;
+          _selectedStatus = null;
         });
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -124,7 +134,7 @@ class _BloodRequestScreenState extends State<BloodRequestScreen> {
                 controller: _nameController,
                 decoration: const InputDecoration(labelText: 'Patient Name'),
                 validator: (value) =>
-                    value == null || value.isEmpty ? 'Please enter your name' : null,
+                    value == null || value.isEmpty ? 'Please enter patient name' : null,
               ),
               const SizedBox(height: 10),
               TextFormField(
@@ -132,7 +142,7 @@ class _BloodRequestScreenState extends State<BloodRequestScreen> {
                 keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(labelText: 'Phone Number'),
                 validator: (value) =>
-                    value == null || value.isEmpty ? 'Please enter your phone number' : null,
+                    value == null || value.isEmpty ? 'Please enter phone number' : null,
               ),
               const SizedBox(height: 10),
               TextFormField(
@@ -178,6 +188,24 @@ class _BloodRequestScreenState extends State<BloodRequestScreen> {
                 onChanged: (value) {
                   setState(() {
                     _selectedBloodGroup = value;
+                  });
+                },
+              ),
+              const SizedBox(height: 10),
+              DropdownButtonFormField<String>(
+                value: _selectedStatus,
+                decoration: const InputDecoration(labelText: 'Status'),
+                items: _statuses
+                    .map((status) => DropdownMenuItem(
+                          value: status,
+                          child: Text(status.toUpperCase()),
+                        ))
+                    .toList(),
+                validator: (value) =>
+                    value == null ? 'Please select status' : null,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedStatus = value;
                   });
                 },
               ),

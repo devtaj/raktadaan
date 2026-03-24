@@ -1,18 +1,26 @@
 // app/routes/app_routes.dart
 import 'package:flutter/material.dart';
+// import 'package:raktadan/features/profile/screens/chat_screen.dart';
 import 'package:raktadan/features/profile/screens/profile_screen.dart';
+
 import 'package:raktadan/features/sub_screens/add_blood_donation_events.dart';
 import 'package:raktadan/features/sub_screens/blood_request_screen.dart';
 import 'package:raktadan/features/sub_screens/event_screen.dart';
 import 'package:raktadan/features/sub_screens/blood_banks.dart';
 import 'package:raktadan/features/sub_screens/emergency_number_list.dart';
 import 'package:raktadan/features/sub_screens/setting_screen.dart';
+import 'package:raktadan/features/request/screens/donor_request_screen.dart';
+import 'package:raktadan/features/sub_screens/accepted_donations_screen.dart';
+import 'package:raktadan/features/sub_screens/donor_chats_screen.dart';
+import 'package:raktadan/features/sub_screens/simple_chat_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart'; 
 import '../../features/home/screens/home_screen.dart';
 
 class AppRoutes {
   static const initial = '/home';
+  
+  
 
   static final routes = <String, WidgetBuilder>{
     '/login': (_) => const LoginScreen(),
@@ -25,6 +33,12 @@ class AppRoutes {
     '/profile':(_)=> const ProfileScreen(),
     '/bloodRequest': (_) => const BloodRequestScreen(),
     '/settings': (_) => const SettingScreen(),
+
+    '/donorRequest': (_) => const DonorRequestScreen(),
+    '/acceptedDonations': (_) => const AcceptedDonationsScreen(),
+    '/donorChats': (_) => const DonorChatsScreen(),
+    '/simpleChat': (_) => const SimpleChatScreen(chatId: '', otherUserName: ''),
+
 
     
     

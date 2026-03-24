@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:raktadan/core/services/auth_service.dart';
+import 'package:raktadan/features/sub_screens/simple_chat_screen.dart';
 
 class DonorListScreen extends StatefulWidget {
   const DonorListScreen({super.key});
@@ -10,6 +12,25 @@ class DonorListScreen extends StatefulWidget {
 }
 
 class _DonorListScreenState extends State<DonorListScreen> {
+  Future<String> _createOrGetChat(String userId1, String userId2) async {
+    final participants = [userId1, userId2]..sort();
+    final chatId = participants.join('_');
+    
+    final chatDoc = FirebaseFirestore.instance.collection('chats').doc(chatId);
+    final chatSnapshot = await chatDoc.get();
+    
+    if (!chatSnapshot.exists) {
+      await chatDoc.set({
+        'participants': participants,
+        'createdAt': FieldValue.serverTimestamp(),
+        'lastMessage': '',
+        'lastMessageTime': FieldValue.serverTimestamp(),
+      });
+    }
+    
+    return chatId;
+  }
+
   Future<void> _refreshData() async {
     setState(() {}); // Triggers StreamBuilder to rebuild
   }
@@ -107,11 +128,37 @@ class _DonorListScreenState extends State<DonorListScreen> {
                           ),
                           title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
                           subtitle: Text('Phone: $phone\nLocation: $location'),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.call, color: Colors.green),
-                            onPressed: () {
-                              _launchDialer(phone);
-                            },
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.chat, color: Colors.blue),
+                                onPressed: () async {
+                                  final currentUserId = AuthService().currentUser?.uid ?? '';
+                                  if (currentUserId.isNotEmpty) {
+                                    final chatId = await _createOrGetChat(
+                                      currentUserId,
+                                      donor.id,
+                                    );
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => SimpleChatScreen(
+                                          chatId: chatId,
+                                          otherUserName: name,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.call, color: Colors.green),
+                                onPressed: () {
+                                  _launchDialer(phone);
+                                },
+                              ),
+                            ],
                           ),
                           isThreeLine: true,
                         ),

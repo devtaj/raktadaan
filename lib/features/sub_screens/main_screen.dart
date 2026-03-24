@@ -4,7 +4,9 @@ import '../../../core/services/auth_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final Function(int)? onNavigateToTab;
+  
+  const MainScreen({super.key, this.onNavigateToTab});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -132,6 +134,13 @@ class _MainScreenState extends State<MainScreen> {
     Navigator.pushNamed(context, '/addEvent');
   }
 
+  void _onChatsTap() {
+    // Navigate to the chat tab (index 3) in the bottom navigation
+    if (widget.onNavigateToTab != null) {
+      widget.onNavigateToTab!(3);
+    }
+  }
+
   Widget buildCard({
     required IconData icon,
     required String label,
@@ -199,6 +208,7 @@ class _MainScreenState extends State<MainScreen> {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   crossAxisCount: 2,
+                  childAspectRatio: 1.2,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
                   children: [
@@ -218,6 +228,10 @@ class _MainScreenState extends State<MainScreen> {
                         icon: Icons.event,
                         label: "Blood Donation Events",
                         onTap: _onEventsTap),
+                    buildCard(
+                        icon: Icons.chat,
+                        label: "My Chats",
+                        onTap: _onChatsTap),
                   ],
                 ),
               ),
@@ -249,7 +263,7 @@ class _MainScreenState extends State<MainScreen> {
               buildBannerCard(
                 title: 'New App Features',
                 description:
-                    'Version 2.1 comming soon with better performance, profile updates, and improved UI.',
+                    'Version 2.1 coming soon with better performance, profile updates, and improved UI.',
               ),
               buildBannerCard(
                 title: 'Volunteer Registration Open',
